@@ -808,7 +808,7 @@ def gradient_descent_mse_ensemble(
                   compute_cov: bool,
                   **kernel_fn_test_test_kwargs):
     get = _get_dependency(get, compute_cov)
-    # k_dd = get_k_train_train(get) #issPerf
+    k_dd = get_k_train_train(get)
     if x_test is None:
       k_td = None
       nngp_tt = compute_cov or None
@@ -853,7 +853,7 @@ def gradient_descent_mse_ensemble(
         nngp_tt = kernel_gg(x_test, None, 'nngp', **kwargs_tt)
       else:
         nngp_tt = None
-    return k_td, nngp_tt #issPerf
+    return k_dd, k_td, nngp_tt
 
   @utils.get_namedtuple('Gaussians')
   def predict_fn(t: ArrayOrScalar = None,
@@ -891,8 +891,8 @@ def gradient_descent_mse_ensemble(
       get = ('nngp', 'ntk')
 
     # train-train, test-train, test-test.
-    k_td, nngp_tt = get_kernels(get, x_test, compute_cov,
-                                      **kernel_fn_test_test_kwargs) #issPerf
+    k_dd, k_td, nngp_tt = get_kernels(get, x_test, compute_cov,
+                                      **kernel_fn_test_test_kwargs)
 
     # Infinite time.
     if t is None:
@@ -900,8 +900,6 @@ def gradient_descent_mse_ensemble(
                               k_test_test=nngp_tt)
 
     # Finite time.
-    get_d = _get_dependency(get, compute_cov) #issPerf
-    k_dd = get_k_train_train(get_d) #issPerf
     t = np.array(t) * learning_rate
     t_shape = t.shape
     t = t.reshape((-1, 1))
