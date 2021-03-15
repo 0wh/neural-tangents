@@ -3427,7 +3427,7 @@ def _cov(
     if `diagonal_spatial` is `False`.
   """
   x2 = x1 if x2 is None else x2
-
+  assert diagonal_spatial is False #issDebug
   if diagonal_spatial:
     ret = _cov_full_batch_diag_spatial(x1, x2, batch_axis, channel_axis)
 
@@ -3720,7 +3720,7 @@ def _preprocess_kernel_fn(
     if x2 is None:
       x2 = tree_map(lambda x: None, x1)
     kernel = _inputs_to_kernel(x1, x2, compute_ntk=compute_ntk, **reqs)
-    out_kernel = kernel_fn(kernel, **kwargs)
+    out_kernel = kernel_fn(kernel, addr_x1=x1, addr_x2=x2, **kwargs) #issDev
     return _set_shapes(init_fn, apply_fn, kernel, out_kernel, **kwargs)
 
   @utils.get_namedtuple('AnalyticKernel')
@@ -4884,3 +4884,109 @@ def _get_all_pos_emb(k: Kernel,
   R12 = utils.mask(R12, mask12)
   R22 = utils.mask(R22, mask22)
   return R11, R12, R22
+
+# issDev >>
+
+@layer
+def Deriv(serial, argnums, which, sign=0):
+    """Layer constructor function for a Derivs layer."""
+    init_fn, apply_fn, pri_kernel_fn = serial
+    def kernel_fn(k, **kwargs):
+        """Compute the transformed kernels of temporal derivatives and spacial divergence."""
+        # `x1` and `x2` are used to calculate the output kernels instead of `k`
+        if not ('addr_x1' in kwargs and 'addr_x2' in kwargs):
+            raise ValueError('addr_x1 and addr_x2 are necessary to calculate Gradients.')
+        x1 = kwargs['addr_x1']
+        x2 = x1 if kwargs['addr_x2'] is None else kwargs['addr_x2']
+        assert x1.shape[-1]==2
+        def K(x1, x2, get):
+            x1, x2 = x1.reshape(1, 2), x2.reshape(1, 2)
+            return pri_kernel_fn(x1, x2, get).squeeze()
+        def deriv(x1, x2, get):
+            jac = jax.jacfwd(K, argnums=argnums)(x1, x2, get=get).squeeze()
+            hessian = jax.hessian(K, argnums=argnums)(x1, x2, get=get).squeeze()
+            return jac[0], hessian[0, 0], hessian[1, 1]
+        nngps = vmap(vmap(deriv, in_axes=(None, 0, None)), in_axes=(0, None, None))(x1, x2, 'nngp')
+        nngp = nngps[which]
+        ntk = k.ntk
+        if ntk is not None:
+            ntks = vmap(vmap(deriv, in_axes=(None, 0, None)), in_axes=(0, None, None))(x1, x2, 'ntk')
+            ntk = ntks[which]
+        if sign<0:
+            nngp = -nngp
+            ntk = None if ntk is None else -ntk
+        return k.replace(nngp=nngp,
+                        ntk=ntk,
+                        is_gaussian=True,
+                        is_input=False)
+    return init_fn, apply_fn, kernel_fn
+
+@layer
+def Ksum(*layers):
+    """Layer construction function for a sum layer."""
+    _, _, kernel_fns = zip(*layers)
+    init_fn, apply_fn = ostax.FanInSum
+    def kernel_fn(k, **kwargs):
+        # `x1` and `x2` are used to calculate the output kernel instead of `k`
+        if not ('addr_x1' in kwargs and 'addr_x2' in kwargs):
+            raise ValueError('addr_x1 and addr_x2 are necessary for layer sums.')
+        x1 = kwargs['addr_x1']
+        x2 = x1 if kwargs['addr_x2'] is None else kwargs['addr_x2']
+        nngps = [kf(x1, x2, 'nngp') for kf in kernel_fns]
+        ntks = [None]
+        if k.ntk is not None: ntks = [kf(x1, x2, 'ntk') for kf in kernel_fns]
+        k_sum = lambda ks: None if ks[0] is None else sum(ks)
+        nngp, ntk = map(k_sum, (nngps, ntks))
+        return k.replace(nngp=nngp,
+                        ntk=ntk,
+                        is_gaussian=True,
+                        is_input=False)
+    return init_fn, apply_fn, kernel_fn
+
+@layer
+def Tailor(l00, l01, l10=None, l11=None, ktd=False):
+    """Layer construction function for a cut & concatenate layer."""
+    init_fn, apply_fn, k00 = l00
+    _, _, k01 = l01
+    if not ktd:
+        _, _, k10 = l10
+        _, _, k11 = l11
+    def kernel_fn(k, **kwargs):
+        ntk = k.ntk
+        if not ('site' in kwargs):
+            raise ValueError('site is necessary for tailor layers.')
+        x1 = kwargs['addr_x1']
+        x2 = x1 if kwargs['addr_x2'] is None else kwargs['addr_x2']
+        site = kwargs['site']
+        x10 = x1[:site]
+        x11 = x1[site:]
+        x20 = x2[:site]
+        x21 = x2[site:]
+        if ktd:
+            x10 = x1
+        nngp00 = k00(x10, x20, 'nngp')
+        nngp01 = k01(x10, x21, 'nngp')
+        nngp0 = np.concatenate((nngp00, nngp01), axis=1)
+        if not ktd:
+            nngp10 = k10(x11, x20, 'nngp')
+            nngp11 = k11(x11, x21, 'nngp')
+            nngp1 = np.concatenate((nngp10, nngp11), axis=1)
+            nngp = np.concatenate((nngp0, nngp1), axis=0)
+        else:
+            nngp = nngp0
+        if ntk is not None:
+            ntk00 = k00(x10, x20, 'ntk')
+            ntk01 = k01(x10, x21, 'ntk')
+            ntk0 = np.concatenate((ntk00, ntk01), axis=1)
+            if not ktd:
+                ntk10 = k10(x11, x20, 'ntk')
+                ntk11 = k11(x11, x21, 'ntk')
+                ntk1 = np.concatenate((ntk10, ntk11), axis=1)
+                ntk = np.concatenate((ntk0, ntk1), axis=0)
+            else:
+                ntk = ntk0
+        return k.replace(nngp=nngp,
+                        ntk=ntk,
+                        is_gaussian=True,
+                        is_input=False)
+    return init_fn, apply_fn, kernel_fn

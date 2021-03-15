@@ -673,7 +673,9 @@ _Kernel.__new__.__defaults__ = (None,) * len(_Kernel._fields)
 
 
 def gradient_descent_mse_ensemble(
-    kernel_fn: KernelFn,
+    kernel_ff: KernelFn,
+    kernel_gf: KernelFn, #issDev
+    kernel_gg: KernelFn, #issDev
     x_train: np.ndarray,
     y_train: np.ndarray,
     learning_rate: float = 1.,
@@ -768,18 +770,18 @@ def gradient_descent_mse_ensemble(
     if len(get) == 1:
       get = get[0]
       if get not in k_dd_cache:
-        k_dd_cache[get] = kernel_fn(x_train, None, get,
+        k_dd_cache[get] = kernel_ff(x_train, None, get,
                                     **kernel_fn_train_train_kwargs)
 
     elif len(get) == 2:
       if not any(g in k_dd_cache for g in get):
         k_dd_cache.update(
-            kernel_fn(x_train, None, get,
+            kernel_ff(x_train, None, get,
                       **kernel_fn_train_train_kwargs)._asdict())
       else:
         for g in get:
           if g not in k_dd_cache:
-            k_dd_cache[g] = kernel_fn(x_train, None, g,
+            k_dd_cache[g] = kernel_ff(x_train, None, g,
                                       **kernel_fn_train_train_kwargs)
 
     else:
@@ -845,10 +847,10 @@ def gradient_descent_mse_ensemble(
         kwargs_td[k] = v_td
         kwargs_tt[k] = v_tt
 
-      k_td = kernel_fn(x_test, x_train, get, **kwargs_td)
+      k_td = kernel_gf(x_test, x_train, get, **kwargs_td)
 
       if compute_cov:
-        nngp_tt = kernel_fn(x_test, None, 'nngp', **kwargs_tt)
+        nngp_tt = kernel_gg(x_test, None, 'nngp', **kwargs_tt)
       else:
         nngp_tt = None
     return k_dd, k_td, nngp_tt
