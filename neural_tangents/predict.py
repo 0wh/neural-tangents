@@ -803,9 +803,9 @@ def gradient_descent_mse_ensemble(
     k_dd = get_k_train_train(get)
     #issDev >>
     if k_dd.nngp is not None:
-        print('nngp condition number:', np.linalg.cond(k_dd.nngp)[0])
+        print('nngp condition number:', np.linalg.cond(k_dd.nngp))
     if k_dd.ntk is not None:
-        print('ntk condition number:', np.linalg.cond(k_dd.ntk)[0])
+        print('ntk condition number:', np.linalg.cond(k_dd.ntk))
     #issDev //
     return gp_inference(k_dd, y_train, diag_reg, diag_reg_absolute_scale,
                         trace_axes)
