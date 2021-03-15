@@ -4964,23 +4964,23 @@ def Tailor(l00, l01, l10=None, l11=None, ktd=False):
         x21 = x2[site:]
         if ktd:
             x10 = x1
-        nngp00 = k00(x10, x20, 'nngp')
-        nngp01 = k01(x10, x21, 'nngp')
+        nngp00 = k00(x10, x20, 'nngp', site=site)
+        nngp01 = k01(x10, x21, 'nngp', site=site)
         nngp0 = np.concatenate((nngp00, nngp01), axis=1)
         if not ktd:
-            nngp10 = k10(x11, x20, 'nngp')
-            nngp11 = k11(x11, x21, 'nngp')
+            nngp10 = k10(x11, x20, 'nngp', site=site)
+            nngp11 = k11(x11, x21, 'nngp', site=site)
             nngp1 = np.concatenate((nngp10, nngp11), axis=1)
             nngp = np.concatenate((nngp0, nngp1), axis=0)
         else:
             nngp = nngp0
         if ntk is not None:
-            ntk00 = k00(x10, x20, 'ntk')
-            ntk01 = k01(x10, x21, 'ntk')
+            ntk00 = k00(x10, x20, 'ntk', site=site)
+            ntk01 = k01(x10, x21, 'ntk', site=site)
             ntk0 = np.concatenate((ntk00, ntk01), axis=1)
             if not ktd:
-                ntk10 = k10(x11, x20, 'ntk')
-                ntk11 = k11(x11, x21, 'ntk')
+                ntk10 = k10(x11, x20, 'ntk', site=site)
+                ntk11 = k11(x11, x21, 'ntk', site=site)
                 ntk1 = np.concatenate((ntk10, ntk11), axis=1)
                 ntk = np.concatenate((ntk0, ntk1), axis=0)
             else:
