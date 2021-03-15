@@ -4953,11 +4953,12 @@ def Tailor(l00, l01, l10=None, l11=None, ktd=False):
         _, _, k11 = l11
     def kernel_fn(k, **kwargs):
         ntk = k.ntk
-        if not ('site' in kwargs):
-            raise ValueError('site is necessary for tailor layers.')
+        #if not ('site' in kwargs):
+            #raise ValueError('site is necessary for tailor layers.')
         x1 = kwargs['addr_x1']
         x2 = x1 if kwargs['addr_x2'] is None else kwargs['addr_x2']
-        site = kwargs['site']
+        #site = kwargs['site']
+        site = -33
         x10 = x1[:site]
         x11 = x1[site:]
         x20 = x2[:site]
