@@ -4990,3 +4990,5 @@ def Tailor(l00, l01, l10=None, l11=None, ktd=False):
                         is_gaussian=True,
                         is_input=False)
     return init_fn, apply_fn, kernel_fn
+
+# issDev //
