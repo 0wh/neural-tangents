@@ -707,7 +707,7 @@ class gradient_descent_mse_ensemble:
   def get_k_train_train(self, get: Sequence[str]) -> _Kernel:
     for g in get:
       if g not in self.k_dd_cache:
-        self.k_dd_cache[g] = kernel_ff(x_train, None, g,
+        self.k_dd_cache[g] = self.kernel_ff(self.x_train, None, g,
                                   **self.kernel_fn_train_train_kwargs)
     return _Kernel(**self.k_dd_cache)
 
