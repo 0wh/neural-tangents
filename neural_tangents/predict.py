@@ -808,7 +808,7 @@ class gradient_descent_mse_ensemble:
     # Finite time.
     raise NotImplementedError
 #issDev //
-
+'''
 def gradient_descent_mse_ensemble(
     kernel_ff: KernelFn,
     kernel_gf: KernelFn, #issDev
@@ -1149,7 +1149,7 @@ def gradient_descent_mse_ensemble(
     return out
 
   return predict_fn
-
+'''
 
 def max_learning_rate(
     ntk_train_train: np.ndarray,
