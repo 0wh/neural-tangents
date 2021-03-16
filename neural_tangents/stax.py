@@ -4957,11 +4957,12 @@ def Tailor(l00, l01, l10=None, l11=None, ktd=False):
             raise ValueError('site is necessary for tailor layers.')
         x1 = kwargs['addr_x1']
         x2 = x1 if kwargs['addr_x2'] is None else kwargs['addr_x2']
-        site = kwargs['site']
+        site = kwargs['site'][0]
         x10 = x1[:site]
         x11 = x1[site:]
         x20 = x2[:site]
         x21 = x2[site:]
+        site = kwargs['site'][1:]
         if ktd:
             x10 = x1
         nngp00 = k00(x10, x20, 'nngp', site=site)

@@ -671,6 +671,147 @@ def gp_inference(
 _Kernel = collections.namedtuple('Kernel', 'nngp ntk')
 _Kernel.__new__.__defaults__ = (None,) * len(_Kernel._fields)
 
+#issDev >>
+class gradient_descent_mse_ensemble:
+  r"""Rewrite the gradient_descent_mse_ensemble method as a class."""
+  def __init__(self,
+      kernel_ff: KernelFn,
+      x_train: np.ndarray,
+      y_train: np.ndarray,
+      learning_rate: float = 1.,
+      diag_reg: float = 0.0,
+      diag_reg_absolute_scale: bool = False,
+      trace_axes: Axes = (-1,),
+      **kernel_fn_train_train_kwargs):
+    self.kernel_ff = kernel_ff
+    self.x_train = x_train
+    self.y_train = y_train
+    self.learning_rate = learning_rate
+    self.diag_reg = diag_reg
+    self.diag_reg_absolute_scale = diag_reg_absolute_scale
+    self.kernel_fn_train_train_kwargs = kernel_fn_train_train_kwargs
+    #expm1 = _make_expm1_fn(y_train.size)
+    #inv_expm1 = _make_inv_expm1_fn(y_train.size)
+    trace_axes = utils.canonicalize_axis(trace_axes, y_train)
+    trace_axes = tuple(-y_train.ndim + a for a in trace_axes)
+    self.trace_axes = trace_axes
+    #n_trace_axes = len(trace_axes)
+    #last_t_axes = range(-n_trace_axes, 0)
+    #trace_shape = tuple(y_train.shape[a] for a in trace_axes)
+
+    #y_train_flat = np.moveaxis(y_train, trace_axes, last_t_axes).reshape(
+    #    (-1,) + trace_shape)
+
+    self.k_dd_cache = {}
+
+  def get_k_train_train(self, get: Sequence[str]) -> _Kernel:
+    for g in get:
+      if g not in self.k_dd_cache:
+        self.k_dd_cache[g] = kernel_ff(x_train, None, g,
+                                  **self.kernel_fn_train_train_kwargs)
+    return _Kernel(**self.k_dd_cache)
+
+  @lru_cache(2)
+  def eigenspace(self, get: str):
+    k_dd = getattr(self.get_k_train_train((get,)), get)
+    k_dd = _add_diagonal_regularizer(utils.make_2d(k_dd), self.diag_reg,
+                                     self.diag_reg_absolute_scale)
+    evals, evecs = np.linalg.eigh(k_dd)
+    evals = np.expand_dims(evals, 0)
+    return evals, evecs
+
+  @lru_cache(4)
+  def predict_inf(self, get: Get):
+    _, get = utils.canonicalize_get(get)
+    k_dd = self.get_k_train_train(get)
+    if k_dd.nngp is not None:
+        print('nngp condition number:', np.linalg.cond(k_dd.nngp))
+    if k_dd.ntk is not None:
+        print('ntk condition number:', np.linalg.cond(k_dd.ntk))
+    return gp_inference(k_dd, self.y_train, self.diag_reg, self.diag_reg_absolute_scale,
+                        self.trace_axes)
+
+  def get_kernels(self, get: Get, x_test: Optional[np.ndarray],
+                  kernel_gf: KernelFn,
+                  kernel_gg: KernelFn,
+                  compute_cov: bool,
+                  **kernel_fn_test_test_kwargs):
+    get = _get_dependency(get, compute_cov)
+    k_dd = self.get_k_train_train(get)
+    if x_test is None:
+      k_td = None
+      nngp_tt = compute_cov or None
+    else:
+      args_train, _ = utils.split_kwargs(self.kernel_fn_train_train_kwargs, self.x_train)
+      args_test, _ = utils.split_kwargs(kernel_fn_test_test_kwargs, x_test)
+
+      def is_array(x):
+        return tree_all(tree_map(lambda x: isinstance(x, np.ndarray), x))
+
+      kwargs_td = dict(self.kernel_fn_train_train_kwargs)
+      kwargs_tt = dict(self.kernel_fn_train_train_kwargs)
+
+      for k in kernel_fn_test_test_kwargs:
+        v_tt = kernel_fn_test_test_kwargs[k]
+        v_dd = self.kernel_fn_train_train_kwargs[k]
+
+        if is_array(v_dd) and is_array(v_tt):
+          if (isinstance(v_dd, tuple) and len(v_dd) == 2 and
+              isinstance(v_tt, tuple) and len(v_tt) == 2):
+            v_td = (args_test[k], args_train[k])
+          else:
+            v_td = v_tt
+
+        elif v_dd != v_tt:
+          raise ValueError(f'Same keyword argument {k} of `kernel_fn` is set to'
+                           f'different values {v_dd} != {v_tt} when computing '
+                           f'the train-train and test-train/test-test kernels. '
+                           f'If this is your intention, please submit a feature'
+                           f' request at '
+                           f'https://github.com/google/neural-tangents/issues')
+
+        else:
+          v_td = v_tt
+
+        kwargs_td[k] = v_td
+        kwargs_tt[k] = v_tt
+
+      k_td = kernel_gf(x_test, self.x_train, get, **kwargs_td)
+
+      if compute_cov:
+        nngp_tt = kernel_gg(x_test, None, 'nngp', **kwargs_tt)
+      else:
+        nngp_tt = None
+    return k_dd, k_td, nngp_tt
+
+  @utils.get_namedtuple('Gaussians')
+  def predict_fn(self,
+                 kernel_gf: KernelFn,
+                 kernel_gg: KernelFn,
+                 x_test: np.ndarray = None,
+                 get: Get = None,
+                 t: ArrayOrScalar = None,
+                 compute_cov: bool = False,
+                 **kernel_fn_test_test_kwargs) -> Dict[str, Gaussian]:
+    if get is None:
+      get = ('nngp', 'ntk')
+
+    # train-train, test-train, test-test.
+    k_dd, k_td, nngp_tt = self.get_kernels(get, x_test, kernel_gf, kernel_gg, compute_cov,
+                                      **kernel_fn_test_test_kwargs)
+
+    # Infinite time.
+    if t is None:
+      return self.predict_inf(get)(get=get, k_test_train=k_td,
+                              k_test_test=nngp_tt)
+
+    # Finite time.
+    raise NotImplementedError
+
+  return predict_fn
+
+
+#issDev //
 
 def gradient_descent_mse_ensemble(
     kernel_ff: KernelFn,
