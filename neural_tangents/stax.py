@@ -4962,7 +4962,8 @@ def Tailor(l00, l01, l10=None, l11=None, ktd=False):
         x11 = x1[site:]
         x20 = x2[:site]
         x21 = x2[site:]
-        site = kwargs['site'][1:]
+        if len(kwargs['site']>1): site = kwargs['site'][1:]
+        else: site = None
         if ktd:
             x10 = x1
         nngp00 = k00(x10, x20, 'nngp', site=site)
