@@ -807,10 +807,6 @@ class gradient_descent_mse_ensemble:
 
     # Finite time.
     raise NotImplementedError
-
-  return predict_fn
-
-
 #issDev //
 
 def gradient_descent_mse_ensemble(
