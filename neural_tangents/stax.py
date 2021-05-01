@@ -313,7 +313,8 @@ def serial(*layers: Layer) -> InternalLayer:
   init_fns, apply_fns, kernel_fns = zip(*layers)
   init_fn, apply_fn = ostax.serial(*zip(init_fns, apply_fns))
 
-  @_requires(**_get_input_req_attr(kernel_fns, fold=op.rshift))
+  #TODO: check the decorator
+  #@_requires(**_get_input_req_attr(kernel_fns, fold=op.rshift))
   def kernel_fn(k: NTTree[Kernel], **kwargs) -> NTTree[Kernel]:
     # TODO(xlc): if we drop `x1_is_x2` and use `rng` instead, need split key
     # inside kernel functions here and parallel below.
