@@ -4900,9 +4900,10 @@ def Deriv(serial, argnums=0, which=0, sign=0):
             raise ValueError('addr_x1 and addr_x2 are necessary to calculate Gradients.')
         x1 = kwargs['addr_x1']
         x2 = x1 if kwargs['addr_x2'] is None else kwargs['addr_x2']
-        assert x1.shape[-1]==2
+        #assert x1.shape[-1]==2
+        dn = x1.shape[-1]
         def K(x1, x2, get):
-            x1, x2 = x1.reshape(1, 2), x2.reshape(1, 2)
+            x1, x2 = x1.reshape(1, dn), x2.reshape(1, dn)
             return pri_kernel_fn(x1, x2, get).squeeze()
         def deriv(x1, x2, get):
             jac = jax.jacfwd(K, argnums=argnums)(x1, x2, get=get).squeeze()
