@@ -729,9 +729,9 @@ class gradient_descent_mse_ensemble:
     _, get = utils.canonicalize_get(get)
     k_dd = self.get_k_train_train(get)
     if k_dd.nngp is not None:
-        print('nngp condition number:', np.linalg.cond(k_dd.nngp))
+        print('nngp condition number: %e'% np.linalg.cond(k_dd.nngp))
     if k_dd.ntk is not None:
-        print('ntk condition number:', np.linalg.cond(k_dd.ntk))
+        print('ntk condition number: %e'% np.linalg.cond(k_dd.ntk))
     return gp_inference(k_dd, self.y_train, self.diag_reg, self.diag_reg_absolute_scale,
                         self.trace_axes)
 
