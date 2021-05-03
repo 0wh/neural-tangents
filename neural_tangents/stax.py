@@ -4890,7 +4890,7 @@ def _get_all_pos_emb(k: Kernel,
 # issDev >>
 
 @layer
-def Deriv(serial, argnums, which, sign=0):
+def Deriv(serial, argnums=0, which=0, sign=0):
     """Layer constructor function for a Derivs layer."""
     init_fn, apply_fn, pri_kernel_fn = serial
     def kernel_fn(k, **kwargs):
@@ -4907,7 +4907,10 @@ def Deriv(serial, argnums, which, sign=0):
         def deriv(x1, x2, get):
             jac = jax.jacfwd(K, argnums=argnums)(x1, x2, get=get).squeeze()
             hessian = jax.hessian(K, argnums=argnums)(x1, x2, get=get).squeeze()
-            return jac[0], hessian[0, 0], hessian[1, 1]
+            try: # 2 variables
+                return jac[0], hessian[0, 0], hessian[1, 1]
+            except: # 1 variable
+                return jac, hessian
         nngps = vmap(vmap(deriv, in_axes=(None, 0, None)), in_axes=(0, None, None))(x1, x2, 'nngp')
         nngp = nngps[which]
         ntk = k.ntk
