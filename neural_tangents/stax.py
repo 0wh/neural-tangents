@@ -3439,6 +3439,7 @@ def _cov(
 
 #issDev>>
 def _rbf(x1, x2, method, c2=1):
+  x2 = x1 if x2 is None else x2
   r2 = x1**2+x2**2
   if method=='gaussian':
     ret = np.exp(-c2*r2)
