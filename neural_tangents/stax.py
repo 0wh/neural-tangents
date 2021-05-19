@@ -3437,6 +3437,17 @@ def _cov(
 
   return ret / x1.shape[channel_axis]
 
+#issDev>>
+def _rbf(x1, x2, method, c2=1):
+  r2 = x1**2+x2**2
+  if method=='gaussian':
+    ret = np.exp(-c2*r2)
+  elif method=='imq':
+    ret = 1/np.sqrt(r2+c2)
+  else:
+    raise NotImplementedError
+  return ret
+#issDev//
 
 @utils.nt_tree_fn(2)
 def _inputs_to_kernel(
@@ -3588,8 +3599,15 @@ def _inputs_to_kernel(
 
   x1, cov1, mask1 = get_x_cov_mask(x1)
   x2, cov2, mask2 = get_x_cov_mask(x2)
-  nngp = _cov(x1, x2, diagonal_spatial, batch_axis, channel_axis)
-
+  #issDev>>
+  if 'method' in kwargs:
+    if kwargs['c2'] is None:
+        nngp = _rbf(x1, x2, kwargs['method'])
+    else:
+        nngp = _rbf(x1, x2, kwargs['method'], c2=kwargs['c2'])
+  else:
+    nngp = _cov(x1, x2, diagonal_spatial, batch_axis, channel_axis)
+  #issDev//
   ntk = np.zeros((), nngp.dtype) if compute_ntk else None
   is_gaussian = False
   is_reversed = False
@@ -3721,7 +3739,7 @@ def _preprocess_kernel_fn(
 
     if x2 is None:
       x2 = tree_map(lambda x: None, x1)
-    kernel = _inputs_to_kernel(x1, x2, compute_ntk=compute_ntk, method=(kwargs['method'] if 'method' in kwargs else None), **reqs) #issDev
+    kernel = _inputs_to_kernel(x1, x2, compute_ntk=compute_ntk, method=(kwargs['method'] if 'method' in kwargs else None), c2=(kwargs['c2'] if 'c2' in kwargs else None), **reqs) #issDev
     out_kernel = kernel_fn(kernel, addr_x1=x1, addr_x2=x2, **kwargs) #issDev
     return _set_shapes(init_fn, apply_fn, kernel, out_kernel, **kwargs)
 
