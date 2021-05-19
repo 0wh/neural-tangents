@@ -3438,9 +3438,10 @@ def _cov(
   return ret / x1.shape[channel_axis]
 
 #issDev>>
-def _rbf(x1, x2, method, c2=1):
+def _rbf(x1, x2, channel_axis, method, c2=1):
+  assert channel_axis==1 or len(x1.shape)+channel_axis==1
   x2 = x1 if x2 is None else x2
-  r2 = x1**2+x2**2
+  r2 = np.norm(x1[:,None]-x2[None], 2, 2)
   if method=='gaussian':
     ret = np.exp(-c2*r2)
   elif method=='imq':
@@ -3603,9 +3604,9 @@ def _inputs_to_kernel(
   #issDev>>
   if 'method' in kwargs:
     if kwargs['c2'] is None:
-        nngp = _rbf(x1, x2, kwargs['method'])
+        nngp = _rbf(x1, x2, channel_axis, kwargs['method'])
     else:
-        nngp = _rbf(x1, x2, kwargs['method'], c2=kwargs['c2'])
+        nngp = _rbf(x1, x2, channel_axis, kwargs['method'], c2=kwargs['c2'])
   else:
     nngp = _cov(x1, x2, diagonal_spatial, batch_axis, channel_axis)
   #issDev//
