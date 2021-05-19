@@ -3444,7 +3444,7 @@ def _rbf(x1, x2, channel_axis, method, c2=1):
   x2 = x1 if x2 is None else x2
   print(x1, x1.shape)
   print(x2, x2.shape)
-  r2 = np.linalg.norm(x1[:,None]-x2[None], 2, 2)
+  r2 = np.linalg.norm(x1[:,None]-x2[None], 2, 2)**2
   if method=='gaussian':
     ret = np.exp(-c2*r2)
   elif method=='imq':
