@@ -713,7 +713,6 @@ class gradient_descent_mse_ensemble:
         if g not in self.k_dd_cache:
           self.k_dd_cache[g] = self.kernel_ff(self.x_train, None, g,
                                     **self.kernel_fn_train_train_kwargs)
-    print(self.k_dd_cache['nngp'])
     return _Kernel(**self.k_dd_cache)
 
   @lru_cache(2)
