@@ -295,23 +295,6 @@ def supports_masking(remask_kernel: bool):
 
 # LAYERS
 
-#issDev>>
-@layer
-def rbf_warp(layer: Layer, method, c2=1) -> InternalLayer:
-
-  init_fn, apply_fn, k_fn = layer
-
-  #TODO(iss): check the decorator
-  #@_requires(**_get_input_req_attr(kernel_fns, fold=op.rshift))
-  def kernel_fn(k: NTTree[Kernel], **kwargs) -> NTTree[Kernel]:
-    # TODO(xlc): if we drop `x1_is_x2` and use `rng` instead, need split key
-    # inside kernel functions here and parallel below.
-    k = k_fn(k, method=method, c2=c2, **kwargs)
-    return k
-
-  return init_fn, apply_fn, kernel_fn
-#issDev//
-
 @layer
 def serial(*layers: Layer) -> InternalLayer:
   """Combinator for composing layers in serial.
