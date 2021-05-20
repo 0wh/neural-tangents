@@ -3744,8 +3744,6 @@ def _preprocess_kernel_fn(
       x2 = tree_map(lambda x: None, x1)
     kernel = _inputs_to_kernel(x1, x2, compute_ntk=compute_ntk, **reqs) #issDev
     out_kernel = kernel_fn(kernel, addr_x1=x1, addr_x2=x2, **kwargs) #issDev
-    print(kernel)
-    print(out_kernel)
     return _set_shapes(init_fn, apply_fn, kernel, out_kernel, **kwargs)
 
   @utils.get_namedtuple('AnalyticKernel')
