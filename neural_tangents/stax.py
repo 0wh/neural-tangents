@@ -3438,7 +3438,6 @@ def _cov(
 
 #issDev>>
 def _rbf(x1, x2, channel_axis, method, c2=1):
-  print(method, c2)
   assert channel_axis==1 or len(x1.shape)+channel_axis==1
   x2 = x1 if x2 is None else x2
   #r2 = np.linalg.norm(x1[:,None]-x2[None], 2, 2)**2
