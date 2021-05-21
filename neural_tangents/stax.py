@@ -3445,7 +3445,7 @@ def _rbf(x1, x2, channel_axis, method, c2=1):
   if method=='gaussian':
     ret = np.exp(-c2*r2)
   elif method=='imq':
-    ret = 1/np.sqrt(r2+c2)
+    ret = 1/np.sqrt(1+c2*r2)
   else:
     raise NotImplementedError
   return ret
