@@ -3452,17 +3452,23 @@ def _rbf(x1, x2, channel_axis, method, c2=1):
 
 def _fem1d(x1, x2):
   if x2 is None:
-    h = np.diff(numpy.sort(x1, axis=None))
+    h = np.diff(np.sort(x1, axis=None))
     M = np.diag(h[:-1]/3+h[1:]/3, 0)+np.diag(h[1:-1]/6, -1)+np.diag(h[1:-1]/6, 1)
     L = np.diag(1/h[:-1]+1/h[1:], 0)-np.diag(1/h[-1:1], -1)-np.diag(1/h[-1:1], 1)
-    return L
+    ret = np.zeros((L.shape[0]+1, L.shape[1]+1))
+    ret[1:-1, 1:-1] = L
+    ret[0, 0] = 1
+    ret[-1, -1] = 1
+    ret[1, 0] = -1/h[0]
+    ret[-2, -1] = -1/h[-1]
+    return ret
   else: # k_td
-    h = np.diff(numpy.sort(x2, axis=None))
+    h = np.diff(np.sort(x2, axis=None))
     d = x1-x2
     v1 = d[:-1]*(d[:-1]>0)*(d[:-1]<h)/h
-    v1 = numpy.insert(v1, 0, 0)
+    v1 = np.insert(v1, 0, 0)
     v2 = -d[1:]*(d[1:]<0)*(d[1:]>-h)/h
-    v2 = numpy.insert(v2, -1, 0)
+    v2 = np.insert(v2, -1, 0)
     return v1+v2
 
 #issDev//
