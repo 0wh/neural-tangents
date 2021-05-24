@@ -3449,6 +3449,22 @@ def _rbf(x1, x2, channel_axis, method, c2=1):
   else:
     raise NotImplementedError
   return ret
+
+def _fem1d(x1, x2):
+  if x2 is None:
+    h = np.diff(numpy.sort(x1, axis=None))
+    M = np.diag(h[:-1]/3+h[1:]/3, 0)+np.diag(h[1:-1]/6, -1)+np.diag(h[1:-1]/6, 1)
+    L = np.diag(1/h[:-1]+1/h[1:], 0)-np.diag(1/h[-1:1], -1)-np.diag(1/h[-1:1], 1)
+    return L
+  else: # k_td
+    h = np.diff(numpy.sort(x2, axis=None))
+    d = x1-x2
+    v1 = d[:-1]*(d[:-1]>0)*(d[:-1]<h)/h
+    v1 = numpy.insert(v1, 0, 0)
+    v2 = -d[1:]*(d[1:]<0)*(d[1:]>-h)/h
+    v2 = numpy.insert(v2, -1, 0)
+    return v1+v2
+
 #issDev//
 
 @utils.nt_tree_fn(2)
@@ -3603,10 +3619,13 @@ def _inputs_to_kernel(
   x2, cov2, mask2 = get_x_cov_mask(x2)
   #issDev>>
   if 'method' in kwargs:
-    if kwargs['c2'] is None:
-        nngp = _rbf(x1, x2, channel_axis, kwargs['method'])
+    if kwargs['method']=='fem':
+      assert x1.shape[channel_axis]==1
+      nngp = _fem1d(x1, x2, channel_axis)
+    elif kwargs['c2'] is None:
+      nngp = _rbf(x1, x2, channel_axis, kwargs['method'])
     else:
-        nngp = _rbf(x1, x2, channel_axis, kwargs['method'], c2=kwargs['c2'])
+      nngp = _rbf(x1, x2, channel_axis, kwargs['method'], c2=kwargs['c2'])
   else:
     nngp = _cov(x1, x2, diagonal_spatial, batch_axis, channel_axis)
   #issDev//
