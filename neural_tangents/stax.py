@@ -3467,7 +3467,7 @@ def _fem1d(x1, x2):
     v1 = np.concatenate((np.zeros((v1.shape[0], 1)), v1), axis=1)
     v2 = -d[:,1:]*(d[:,1:]<0)*(d[:,1:]>-h)/h
     v2 = np.concatenate((v2, np.zeros((v2.shape[0], 1))), axis=1)
-    v3 = -d[:,1:]*(x1==0)/h
+    v3 = -d[:,1:]*(d[:,1:]<0)*(d[:,1:]==-h)*(x1==0)/h
     v3 = np.concatenate((v3, np.zeros((v3.shape[0], 1))), axis=1)
     return v1+v2+v3
 
