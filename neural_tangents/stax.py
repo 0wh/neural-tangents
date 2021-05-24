@@ -3621,7 +3621,7 @@ def _inputs_to_kernel(
   if 'method' in kwargs:
     if kwargs['method']=='fem':
       assert x1.shape[channel_axis]==1
-      nngp = _fem1d(x1, x2, channel_axis)
+      nngp = _fem1d(x1, x2)
     elif kwargs['c2'] is None:
       nngp = _rbf(x1, x2, channel_axis, kwargs['method'])
     else:
