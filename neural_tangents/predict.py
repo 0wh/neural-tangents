@@ -615,8 +615,6 @@ def gp_inference(
         y = y_train.astype(k_dd.dtype)
       else:
         # Test set predictions.
-        print(k_inv_y(k))
-        print(k_td)
         y = np.tensordot(k_td, k_inv_y(k), (odd, first))
         y = np.moveaxis(y, range(-len(trace_axes), 0), trace_axes)
 
