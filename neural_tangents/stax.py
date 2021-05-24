@@ -3468,7 +3468,7 @@ def _fem1d(x1, x2):
     return ret
   else: # k_td
     h = np.diff(np.sort(x2, axis=None))
-    d = x1-x2
+    d = x1-x2.flat
     v1 = d[:-1]*(d[:-1]>0)*(d[:-1]<h)/h
     v1 = np.insert(v1, 0, 0)
     v2 = -d[1:]*(d[1:]<0)*(d[1:]>-h)/h
