@@ -3455,9 +3455,9 @@ def _fem1d(x1, x2):
     h = np.diff(np.sort(x1, axis=None))
     M = np.diag(h[:-1]/3+h[1:]/3, 0)+np.diag(h[1:-1]/6, -1)+np.diag(h[1:-1]/6, 1)
     L = np.diag(1/h[:-1]+1/h[1:], 0)-np.diag(1/h[-1:1], -1)-np.diag(1/h[-1:1], 1)
-    ret = np.concatenate((np.zeros(1, L.shape[1]), L, np.zeros(1, L.shape[1])), axis=0)
-    cl = np.concatenate((np.array([1, -1/h[0]]), np.zeros(L.shape[0], 1)), axis=0)
-    cr = np.concatenate((np.zeros(L.shape[0], 1), np.array([-1/h[-1], 1])), axis=0)
+    ret = np.concatenate((np.zeros((1, L.shape[1])), L, np.zeros((1, L.shape[1]))), axis=0)
+    cl = np.concatenate((np.array([1, -1/h[0]]), np.zeros((L.shape[0], 1))), axis=0)
+    cr = np.concatenate((np.zeros((L.shape[0], 1)), np.array([-1/h[-1], 1])), axis=0)
     ret = np.concatenate((cl, ret, cr), axis=1)
     '''ret = np.zeros((L.shape[0]+1, L.shape[1]+1))
     ret[1:-1, 1:-1] = L
