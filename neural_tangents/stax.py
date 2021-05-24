@@ -3469,9 +3469,9 @@ def _fem1d(x1, x2):
   else: # k_td
     h = np.diff(np.sort(x2, axis=None))
     d = x1-x2.reshape(1, -1)
-    v1 = d[:-1]*(d[:-1]>0)*(d[:-1]<h)/h
+    v1 = d[:,:-1]*(d[:,:-1]>0)*(d[:,:-1]<h)/h
     v1 = np.insert(v1, 0, 0)
-    v2 = -d[1:]*(d[1:]<0)*(d[1:]>-h)/h
+    v2 = -d[:,1:]*(d[:,1:]<0)*(d[:,1:]>-h)/h
     v2 = np.insert(v2, -1, 0)
     return v1+v2
 
