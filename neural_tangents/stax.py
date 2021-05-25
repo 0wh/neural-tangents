@@ -3459,7 +3459,7 @@ def _fem1d(x1, x2):
     #cl = np.concatenate((np.array([1, -1/h[0]]).reshape(-1,1), np.zeros((L.shape[0], 1))), axis=0)
     #cr = np.concatenate((np.zeros((L.shape[0], 1)), np.array([-1/h[-1], 1]).reshape(-1,1)), axis=0)
     #ret = np.concatenate((cl, ret, cr), axis=1)
-    return L
+    return -L
   else: # k_td
     h = np.diff(np.sort(x2, axis=None))
     d = x1-x2.reshape(1, -1)
