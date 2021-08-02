@@ -810,7 +810,112 @@ class gradient_descent_mse_ensemble:
                               k_test_test=nngp_tt)
 
     # Finite time.
-    raise NotImplementedError
+    # raise NotImplementedError
+
+    t = np.array(t) * learning_rate
+    t_shape = t.shape
+    t = t.reshape((-1, 1))
+
+    def reshape_mean(mean):
+      k = _get_first(k_dd if k_td is None else k_td)
+      mean = mean.reshape(t_shape + k.shape[::2] + trace_shape)
+      mean = np.moveaxis(mean, last_t_axes, trace_axes)
+      return mean
+
+    def reshape_cov(cov):
+      k = _get_first(k_dd if k_td is None else k_td)
+      cov_shape_t = t_shape + k.shape[::2] * 2
+      return utils.zip_axes(cov.reshape(cov_shape_t), len(t_shape))
+
+    out = {}
+
+    for g in get:
+      evals, evecs = self.eigenspace(g)
+
+      # Training set.
+      if k_td is None:
+        mean = np.einsum(
+            'ji,ti,ki,k...->tj...',
+            evecs, -expm1(evals, t), evecs, y_train_flat,
+            optimize=True)
+
+      # Test set.
+      else:
+        neg_inv_expm1 = -inv_expm1(evals, t)
+        ktd_g = utils.make_2d(getattr(k_td, g))
+        mean = np.einsum(
+            'lj,ji,ti,ki,k...->tl...',
+            ktd_g, evecs, neg_inv_expm1, evecs, y_train_flat,
+            optimize=True)
+
+      mean = reshape_mean(mean)
+
+      if nngp_tt is not None:
+        nngp_dd = utils.make_2d(k_dd.nngp)
+
+        # Training set.
+        if k_td is None:
+          if g == 'nngp':
+            cov = np.einsum(
+                'ji,ti,ki->tjk',
+                evecs,
+                (np.maximum(evals, 0.) *
+                 np.exp(- 2 * np.maximum(evals, 0.) * t / y_train.size)),
+                evecs,
+                optimize=True)
+
+          elif g == 'ntk':
+            exp = np.einsum(
+                'mi,ti,ki->tmk',
+                evecs,
+                np.exp(-np.maximum(evals, 0.) * t / y_train.size),
+                evecs,
+                optimize=True)
+            cov = np.einsum(
+                'tmk,kl,tnl->tmn',
+                exp,
+                nngp_dd,
+                exp,
+                optimize=True)
+
+          else:
+            raise ValueError(g)
+
+        # Test set.
+        else:
+          _nngp_tt = np.expand_dims(utils.make_2d(nngp_tt), 0)
+
+          if g == 'nngp':
+            cov = _nngp_tt - np.einsum(
+                'mj,ji,ti,ki,lk->tml',
+                ktd_g, evecs, -inv_expm1(evals, 2 * t), evecs, ktd_g,
+                optimize=True)
+
+          elif g == 'ntk':
+            term_1 = np.einsum(
+                'mi,ti,ki,lk->tml',
+                evecs, neg_inv_expm1, evecs, ktd_g,
+                optimize=True)
+            term_2 = np.einsum(
+                'mj,ji,ti,ki,lk->tml',
+                ktd_g, evecs, neg_inv_expm1, evecs, utils.make_2d(k_td.nngp),  # pytype:disable=attribute-error
+                optimize=True)
+            term_2 += np.moveaxis(term_2, 1, 2)
+            cov = np.einsum(
+                'tji,jk,tkl->til',
+                term_1, nngp_dd, term_1,
+                optimize=True)
+            cov += -term_2 + _nngp_tt
+
+          else:
+            raise ValueError(g)
+
+        out[g] = Gaussian(mean, reshape_cov(cov))
+
+      else:
+        out[g] = mean
+
+    return out
 #issDev //
 '''
 def gradient_descent_mse_ensemble(
