@@ -690,8 +690,8 @@ class gradient_descent_mse_ensemble:
     self.diag_reg = diag_reg
     self.diag_reg_absolute_scale = diag_reg_absolute_scale
     self.kernel_fn_train_train_kwargs = kernel_fn_train_train_kwargs
-    #expm1 = _make_expm1_fn(y_train.size)
-    #inv_expm1 = _make_inv_expm1_fn(y_train.size)
+    self.expm1 = _make_expm1_fn(y_train.size)
+    self.inv_expm1 = _make_inv_expm1_fn(y_train.size)
     trace_axes = utils.canonicalize_axis(trace_axes, y_train)
     trace_axes = tuple(-y_train.ndim + a for a in trace_axes)
     self.trace_axes = trace_axes
@@ -835,12 +835,12 @@ class gradient_descent_mse_ensemble:
       if k_td is None:
         mean = np.einsum(
             'ji,ti,ki,k...->tj...',
-            evecs, -expm1(evals, t), evecs, y_train_flat,
+            evecs, -self.expm1(evals, t), evecs, y_train_flat,
             optimize=True)
 
       # Test set.
       else:
-        neg_inv_expm1 = -inv_expm1(evals, t)
+        neg_inv_expm1 = -self.inv_expm1(evals, t)
         ktd_g = utils.make_2d(getattr(k_td, g))
         mean = np.einsum(
             'lj,ji,ti,ki,k...->tl...',
@@ -887,7 +887,7 @@ class gradient_descent_mse_ensemble:
           if g == 'nngp':
             cov = _nngp_tt - np.einsum(
                 'mj,ji,ti,ki,lk->tml',
-                ktd_g, evecs, -inv_expm1(evals, 2 * t), evecs, ktd_g,
+                ktd_g, evecs, -self.inv_expm1(evals, 2 * t), evecs, ktd_g,
                 optimize=True)
 
           elif g == 'ntk':
