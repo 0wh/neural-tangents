@@ -797,7 +797,8 @@ class gradient_descent_mse_ensemble:
                  t: ArrayOrScalar = None,
                  compute_cov: bool = False,
                  **kernel_fn_test_test_kwargs) -> Dict[str, Gaussian]:
-    print(self.learning_rate,'ojbk')
+    print(self.learning_rate, 'ok')
+    print('ojbk')
     if get is None:
       get = ('nngp', 'ntk')
 
