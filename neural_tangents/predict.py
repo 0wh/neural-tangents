@@ -695,12 +695,12 @@ class gradient_descent_mse_ensemble:
     trace_axes = utils.canonicalize_axis(trace_axes, y_train)
     trace_axes = tuple(-y_train.ndim + a for a in trace_axes)
     self.trace_axes = trace_axes
-    #n_trace_axes = len(trace_axes)
-    #last_t_axes = range(-n_trace_axes, 0)
-    #trace_shape = tuple(y_train.shape[a] for a in trace_axes)
+    n_trace_axes = len(trace_axes)
+    self.last_t_axes = range(-n_trace_axes, 0)
+    self.trace_shape = tuple(y_train.shape[a] for a in trace_axes)
 
-    #y_train_flat = np.moveaxis(y_train, trace_axes, last_t_axes).reshape(
-    #    (-1,) + trace_shape)
+    self.y_train_flat = np.moveaxis(y_train, trace_axes, self.last_t_axes).reshape(
+        (-1,) + self.trace_shape)
 
     self.k_dd_cache = {}
 
@@ -817,8 +817,8 @@ class gradient_descent_mse_ensemble:
 
     def reshape_mean(mean):
       k = _get_first(k_dd if k_td is None else k_td)
-      mean = mean.reshape(t_shape + k.shape[::2] + trace_shape)
-      mean = np.moveaxis(mean, last_t_axes, trace_axes)
+      mean = mean.reshape(t_shape + k.shape[::2] + self.trace_shape)
+      mean = np.moveaxis(mean, self.last_t_axes, self.trace_axes)
       return mean
 
     def reshape_cov(cov):
@@ -835,7 +835,7 @@ class gradient_descent_mse_ensemble:
       if k_td is None:
         mean = np.einsum(
             'ji,ti,ki,k...->tj...',
-            evecs, -self.expm1(evals, t), evecs, y_train_flat,
+            evecs, -self.expm1(evals, t), evecs, self.y_train_flat,
             optimize=True)
 
       # Test set.
@@ -844,7 +844,7 @@ class gradient_descent_mse_ensemble:
         ktd_g = utils.make_2d(getattr(k_td, g))
         mean = np.einsum(
             'lj,ji,ti,ki,k...->tl...',
-            ktd_g, evecs, neg_inv_expm1, evecs, y_train_flat,
+            ktd_g, evecs, neg_inv_expm1, evecs, self.y_train_flat,
             optimize=True)
 
       mean = reshape_mean(mean)
