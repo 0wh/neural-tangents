@@ -797,8 +797,6 @@ class gradient_descent_mse_ensemble:
                  t: ArrayOrScalar = None,
                  compute_cov: bool = False,
                  **kernel_fn_test_test_kwargs) -> Dict[str, Gaussian]:
-    print(self.learning_rate, 'ok')
-    print('ojbk')
     if get is None:
       get = ('nngp', 'ntk')
 
@@ -812,9 +810,7 @@ class gradient_descent_mse_ensemble:
                               k_test_test=nngp_tt)
 
     # Finite time.
-    # raise NotImplementedError
     print(self.learning_rate)
-    return
     t = np.array(t) * self.learning_rate
     t_shape = t.shape
     t = t.reshape((-1, 1))
