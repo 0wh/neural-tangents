@@ -810,7 +810,7 @@ class gradient_descent_mse_ensemble:
                               k_test_test=nngp_tt)
 
     # Finite time.
-    print(self.learning_rate)
+
     t = np.array(t) * self.learning_rate
     t_shape = t.shape
     t = t.reshape((-1, 1))
