@@ -859,7 +859,7 @@ class gradient_descent_mse_ensemble:
                 'ji,ti,ki->tjk',
                 evecs,
                 (np.maximum(evals, 0.) *
-                 np.exp(- 2 * np.maximum(evals, 0.) * t / y_train.size)),
+                 np.exp(- 2 * np.maximum(evals, 0.) * t / self.y_train.size)),
                 evecs,
                 optimize=True)
 
@@ -867,7 +867,7 @@ class gradient_descent_mse_ensemble:
             exp = np.einsum(
                 'mi,ti,ki->tmk',
                 evecs,
-                np.exp(-np.maximum(evals, 0.) * t / y_train.size),
+                np.exp(-np.maximum(evals, 0.) * t / self.y_train.size),
                 evecs,
                 optimize=True)
             cov = np.einsum(
