@@ -812,6 +812,7 @@ class gradient_descent_mse_ensemble:
     # Finite time.
     # raise NotImplementedError
     print(self.learning_rate)
+    return
     t = np.array(t) * self.learning_rate
     t_shape = t.shape
     t = t.reshape((-1, 1))
