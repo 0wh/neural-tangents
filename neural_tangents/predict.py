@@ -29,7 +29,7 @@ that closed-form kernels currently only support a single `channel_axis`).
 
 import collections
 import jax
-from jax.api import grad
+from jax import grad
 from jax.experimental import ode
 import jax.numpy as np
 import jax.scipy as sp
