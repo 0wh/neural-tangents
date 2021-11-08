@@ -638,7 +638,8 @@ def gp_inference(
           g_init = 'nngp' if g != 'ntkgp' else 'ntk'
 
           k_td_g_inv_y = solve(k)(_get_attr(k_test_train, g_init), even)
-          k_tt = _get_attr(k_test_test, g_init)
+          #k_tt = _get_attr(k_test_test, g_init)
+          k_tt = k_test_test
 
           if g == 'nngp' or g == 'ntkgp':
             cov = np.tensordot(k_td, k_td_g_inv_y, (odd, first))
@@ -805,8 +806,6 @@ class gradient_descent_mse_ensemble:
                                       **kernel_fn_test_test_kwargs)
 
     # Infinite time.
-    print(k_td)
-    print(nngp_tt)
     if t is None:
       return self.predict_inf(get)(get=get, k_test_train=k_td,
                               k_test_test=nngp_tt)
