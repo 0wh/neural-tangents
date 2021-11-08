@@ -638,8 +638,8 @@ def gp_inference(
           g_init = 'nngp' if g != 'ntkgp' else 'ntk'
 
           k_td_g_inv_y = solve(k)(_get_attr(k_test_train, g_init), even)
-          #k_tt = _get_attr(k_test_test, g_init)
-          k_tt = k_test_test
+          try: k_tt = _get_attr(k_test_test, g_init)
+          except: k_tt = k_test_test # issDebug
 
           if g == 'nngp' or g == 'ntkgp':
             cov = np.tensordot(k_td, k_td_g_inv_y, (odd, first))
