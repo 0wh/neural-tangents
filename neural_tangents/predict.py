@@ -805,6 +805,8 @@ class gradient_descent_mse_ensemble:
                                       **kernel_fn_test_test_kwargs)
 
     # Infinite time.
+    print(k_td)
+    print(nngp_tt)
     if t is None:
       return self.predict_inf(get)(get=get, k_test_train=k_td,
                               k_test_test=nngp_tt)
