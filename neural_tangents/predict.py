@@ -673,6 +673,14 @@ _Kernel = collections.namedtuple('Kernel', 'nngp ntk')
 _Kernel.__new__.__defaults__ = (None,) * len(_Kernel._fields)
 
 #issDev >>
+def eff_cond(A, b):
+    """Effective condition number"""
+    w, v = np.linalg.eigh(A)
+    beta = np.dot(v.transpose(), b)
+    b_norm = np.sqrt(np.sum(beta**2))
+    x_norm = np.sqrt(np.sum((beta/w.reshape(-1, 1))**2))
+    return b_norm/(w[0]*x_norm)
+
 class gradient_descent_mse_ensemble:
   r"""Rewrite the gradient_descent_mse_ensemble method as a class."""
   def __init__(self,
@@ -730,9 +738,9 @@ class gradient_descent_mse_ensemble:
     _, get = utils.canonicalize_get(get)
     k_dd = self.get_k_train_train(get)
     if k_dd.nngp is not None:
-        print('nngp condition number: %e'% np.linalg.cond(k_dd.nngp))
+        print('nngp condition number: %e -> %e'% np.linalg.cond(k_dd.nngp), eff_cond(k_dd.ntk, self.y_train))
     if k_dd.ntk is not None:
-        print('ntk condition number: %e'% np.linalg.cond(k_dd.ntk))
+        print('ntk condition number: %e -> %e'% np.linalg.cond(k_dd.ntk), eff_cond(k_dd.ntk, self.y_train))
     return gp_inference(k_dd, self.y_train, self.diag_reg, self.diag_reg_absolute_scale,
                         self.trace_axes)
 
