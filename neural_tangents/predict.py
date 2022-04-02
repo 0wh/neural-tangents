@@ -676,10 +676,12 @@ _Kernel.__new__.__defaults__ = (None,) * len(_Kernel._fields)
 def eff_cond(A, b):
     """Effective condition number"""
     w, v = np.linalg.eigh(A)
-    beta = np.dot(v.transpose(), b)
+    beta = np.dot(v.transpose(), b).reshape(-1)
     b_norm = np.sqrt(np.sum(beta**2))
     x_norm = np.sqrt(np.sum((beta/w.reshape(-1, 1))**2))
-    return b_norm/(w[0]*x_norm)
+    #return b_norm/(w[0]*x_norm)
+    print('w0', w[0])
+    return b_norm/np.sqrt(np.sum( ((w[0]/w)*beta)**2 ))
 
 class gradient_descent_mse_ensemble:
   r"""Rewrite the gradient_descent_mse_ensemble method as a class."""
