@@ -40,6 +40,7 @@ from neural_tangents.utils.typing import KernelFn, Axes, Get
 from typing import Union, Tuple, Callable, Iterable, Optional, Dict, NamedTuple, Sequence, Generator
 from functools import lru_cache
 
+import numpy as original_numpy #issDev
 
 """Alias for optional arrays or scalars."""
 ArrayOrScalar = Union[None, int, float, np.ndarray]
@@ -679,9 +680,18 @@ def eff_cond(A, b):
     beta = np.dot(v.transpose(), b).reshape(-1)
     b_norm = np.sqrt(np.sum(beta**2))
     x_norm = np.sqrt(np.sum((beta/w.reshape(-1, 1))**2))
+    print('w0jax', w[0], '\tx_norm', x_norm, '\tb_norm', b_norm)
     #return b_norm/(w[0]*x_norm)
-    print('w0', w[0])
-    return b_norm/np.sqrt(np.sum( ((w[0]/w)*beta)**2 ))
+    
+    A = original_numpy.array(A)
+    b = original_numpy.array(b)
+    w, v = original_numpy.linalg.eigh(A)
+    beta = original_numpy.dot(v.transpose(), b).reshape(-1)
+    b_norm = original_numpy.sqrt(original_numpy.sum(beta**2))
+    x_norm = original_numpy.sqrt(original_numpy.sum((beta/w.reshape(-1, 1))**2))
+    print('w0ori', w[0], '\tx_norm', x_norm, '\tb_norm', b_norm)
+    return b_norm/(w[0]*x_norm)
+    #return b_norm/original_numpy.sqrt(original_numpy.sum( ((w[0]/w)*beta)**2 ))
 
 class gradient_descent_mse_ensemble:
   r"""Rewrite the gradient_descent_mse_ensemble method as a class."""
