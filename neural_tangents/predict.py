@@ -683,9 +683,16 @@ def eff_cond(A, b):
     print('w0jax', w[0], '\tx_norm', x_norm, '\tb_norm', b_norm)
     #return b_norm/(w[0]*x_norm)
     
-    A = original_numpy.array(A)
-    b = original_numpy.array(b)
+    A1 = original_numpy.array(A)
+    b1 = original_numpy.array(b)
+    print(A1)
+    w, v = original_numpy.linalg.eigh(A1)
+    print(w)
+    A = original_numpy.array(A, dtype=original_numpy.float64)
+    b = original_numpy.array(b, dtype=original_numpy.float64)
+    print(A)
     w, v = original_numpy.linalg.eigh(A)
+    print(w)
     beta = original_numpy.dot(v.transpose(), b).reshape(-1)
     b_norm = original_numpy.sqrt(original_numpy.sum(beta**2))
     x_norm = original_numpy.sqrt(original_numpy.sum((beta/w.reshape(-1, 1))**2))
@@ -750,7 +757,7 @@ class gradient_descent_mse_ensemble:
     _, get = utils.canonicalize_get(get)
     k_dd = self.get_k_train_train(get)
     if k_dd.nngp is not None:
-        print('nngp condition number: %e -> %e'%(np.linalg.cond(k_dd.nngp), eff_cond(k_dd.ntk, self.y_train)))
+        #print('nngp condition number: %e -> %e'%(np.linalg.cond(k_dd.nngp), eff_cond(k_dd.ntk, self.y_train)))
     if k_dd.ntk is not None:
         print('ntk condition number: %e -> %e'%(np.linalg.cond(k_dd.ntk), eff_cond(k_dd.ntk, self.y_train)))
     return gp_inference(k_dd, self.y_train, self.diag_reg, self.diag_reg_absolute_scale,
