@@ -703,7 +703,9 @@ class gradient_descent_mse_ensemble:
       diag_reg: float = 0.0,
       diag_reg_absolute_scale: bool = False,
       trace_axes: Axes = (-1,),
+      precision = None,
       **kernel_fn_train_train_kwargs):
+    self.precision = precision
     self.kernel_ff = kernel_ff
     self.x_train = x_train
     self.y_train = y_train
@@ -726,14 +728,22 @@ class gradient_descent_mse_ensemble:
     self.k_dd_cache = {}
 
   def get_k_train_train(self, get: Sequence[str]) -> _Kernel:
-    if not any(g in self.k_dd_cache for g in get):
+    for g in get:
+      if g not in self.k_dd_cache:
+        if self.precision is None:
+          self.k_dd_cache[g] = self.kernel_ff(self.x_train, None, g,
+                                    **self.kernel_fn_train_train_kwargs)
+        else:
+          self.k_dd_cache[g] = self.kernel_ff(self.x_train, None, g,
+                                    **self.kernel_fn_train_train_kwargs).astype(self.precision)
+    '''if not any(g in self.k_dd_cache for g in get):
       self.k_dd_cache.update(self.kernel_ff(self.x_train, None, get,
                         **self.kernel_fn_train_train_kwargs)._asdict())
     else:
       for g in get:
         if g not in self.k_dd_cache:
           self.k_dd_cache[g] = self.kernel_ff(self.x_train, None, g,
-                                    **self.kernel_fn_train_train_kwargs)
+                                    **self.kernel_fn_train_train_kwargs)'''
     return _Kernel(**self.k_dd_cache)
 
   @lru_cache(2)
