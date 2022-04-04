@@ -689,7 +689,7 @@ def eff_cond(A, b):
     beta = original_numpy.dot(v.transpose(), b).reshape(-1)
     b_norm = original_numpy.sqrt(original_numpy.sum(beta**2))
     x_norm = original_numpy.sqrt(original_numpy.sum((beta/w)**2))
-    print('w0ori', w[0], '\tx_norm', x_norm, '\tb_norm', b_norm, (beta/w).shape)
+    print('w0ori', w[0], '\tx_norm', x_norm, '\tb_norm', b_norm)
     return b_norm/(original_numpy.abs(w[0])*x_norm)
     #return b_norm/original_numpy.sqrt(original_numpy.sum( ((w[0]/w)*beta)**2 ))
 
