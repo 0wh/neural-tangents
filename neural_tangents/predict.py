@@ -676,13 +676,14 @@ _Kernel.__new__.__defaults__ = (None,) * len(_Kernel._fields)
 #issDev >>
 def eff_cond(A, b):
     """Effective condition number"""
+    '''
     w, v = np.linalg.eigh(A)
     beta = np.dot(v.transpose(), b).reshape(-1)
     b_norm = np.sqrt(np.sum(beta**2))
     x_norm = np.sqrt(np.sum((beta/w)**2))
     #print('w0jax', w[0], '\tx_norm', x_norm, '\tb_norm', b_norm)
     #return b_norm/(np.abs(w[0])*x_norm)
-    
+    '''
     A = original_numpy.array(A, dtype=original_numpy.float64)
     b = original_numpy.array(b, dtype=original_numpy.float64)
     w, v = original_numpy.linalg.eigh(A)
