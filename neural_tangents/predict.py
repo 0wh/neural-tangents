@@ -805,6 +805,7 @@ class gradient_descent_mse_ensemble:
       kwargs_tt = dict(self.kernel_fn_train_train_kwargs)
 
       for k in kernel_fn_test_test_kwargs:
+        if k=='get_condition_number': continue
         v_tt = kernel_fn_test_test_kwargs[k]
         v_dd = self.kernel_fn_train_train_kwargs[k]
 
