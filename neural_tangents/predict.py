@@ -718,8 +718,8 @@ class gradient_descent_mse_ensemble:
   def feed(self,
       x_train: np.ndarray,
       y_train: np.ndarray):
-    self.x_train = x_train
-    self.y_train = y_train
+    self.x_train = x_train.astype(self.precision)
+    self.y_train = y_train.astype(self.precision)
     self.expm1 = _make_expm1_fn(y_train.size)
     self.inv_expm1 = _make_inv_expm1_fn(y_train.size)
     trace_axes = utils.canonicalize_axis(self.trace_axes, y_train)
@@ -732,18 +732,16 @@ class gradient_descent_mse_ensemble:
         (-1,) + self.trace_shape)
 
     self.k_dd_cache = {}
+    self.get_k_train_train(get)
     self.nngp_c = None
     self.ntk_c = None
 
   def get_k_train_train(self, get: Sequence[str]) -> _Kernel:
     for g in get:
       if g not in self.k_dd_cache:
-        if self.precision is None:
-          self.k_dd_cache[g] = self.kernel_ff(self.x_train, None, g,
-                                    **self.kernel_fn_train_train_kwargs)
-        else:
-          self.k_dd_cache[g] = self.kernel_ff(self.x_train, None, g,
-                                    **self.kernel_fn_train_train_kwargs).astype(self.precision)
+        self.k_dd_cache[g] = self.kernel_ff(self.x_train.astype(np.float64), None, g,
+                                  **self.kernel_fn_train_train_kwargs)
+        
     '''if not any(g in self.k_dd_cache for g in get):
       self.k_dd_cache.update(self.kernel_ff(self.x_train, None, get,
                         **self.kernel_fn_train_train_kwargs)._asdict())
