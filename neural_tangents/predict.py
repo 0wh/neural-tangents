@@ -780,8 +780,11 @@ class gradient_descent_mse_ensemble:
     k_dd = self.get_k_train_train(get)
     if 'get_condition_number' in kernel_fn_test_test_kwargs:
         get_c = kernel_fn_test_test_kwargs['get_condition_number']
-        if 'nngp' in get_c and k_dd.nngp is not None:
-          self.nngp_c = eff_cond(k_dd.nngp, self.y_train).item()
+        if 'nngp' in get_c:
+          if k_dd.nngp is not None:
+            self.nngp_c = eff_cond(k_dd.nngp, self.y_train).item()
+          else:
+            self.nngp_c = eff_cond(k_dd, self.y_train).item()
         if 'ntk' in get_c and k_dd.ntk is not None:
           self.ntk_c = eff_cond(k_dd.ntk, self.y_train).item()
     if x_test is None:
