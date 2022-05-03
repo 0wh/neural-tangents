@@ -697,8 +697,8 @@ class gradient_descent_mse_ensemble:
   r"""Rewrite the gradient_descent_mse_ensemble method as a class."""
   def __init__(self,
       kernel_ff: KernelFn,
-      x_train = None: np.ndarray,
-      y_train = None: np.ndarray,
+      x_train: np.ndarray = None,
+      y_train: np.ndarray = None,
       learning_rate: float = 1.,
       diag_reg: float = 0.0,
       diag_reg_absolute_scale: bool = False,
