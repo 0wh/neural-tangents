@@ -504,7 +504,8 @@ def gp_inference(
     y_train: np.ndarray,
     diag_reg: float = 0.,
     diag_reg_absolute_scale: bool = False,
-    trace_axes: Axes = (-1,)):
+    trace_axes: Axes = (-1,),
+    precision = None):
   r"""Compute the mean and variance of the 'posterior' of NNGP/NTK/NTKGP.
 
   NNGP - the exact posterior of an infinitely wide Bayesian NN. NTK - exact
@@ -551,6 +552,7 @@ def gp_inference(
     computing 'posterior' Gaussian distribution (mean or mean and covariance)
     on a given test set.
   """
+  self.precision = precision
   even, odd, first, last = _get_axes(_get_first(k_train_train))
   trace_axes = utils.canonicalize_axis(trace_axes, y_train)
 
@@ -698,8 +700,8 @@ class gradient_descent_mse_ensemble:
   r"""Rewrite the gradient_descent_mse_ensemble method as a class."""
   def __init__(self,
       kernel_ff: KernelFn,
-      x_train: np.ndarray = None,
-      y_train: np.ndarray = None,
+      x_train: np.ndarray,
+      y_train: np.ndarray,
       learning_rate: float = 1.,
       diag_reg: float = 0.0,
       diag_reg_absolute_scale: bool = False,
@@ -713,9 +715,9 @@ class gradient_descent_mse_ensemble:
     self.diag_reg_absolute_scale = diag_reg_absolute_scale
     self.kernel_fn_train_train_kwargs = kernel_fn_train_train_kwargs
     self.trace_axes = trace_axes
-    if x_train is not None and y_train is not None:
-        self.feed(x_train, y_train)
-  def feed(self,
+    self._feed(x_train, y_train)
+        
+  def _feed(self,
       x_train: np.ndarray,
       y_train: np.ndarray):
     self.x_train = x_train.astype(self.precision)
@@ -732,7 +734,6 @@ class gradient_descent_mse_ensemble:
         (-1,) + self.trace_shape)
 
     self.k_dd_cache = {}
-    self.get_k_train_train(get)
     self.nngp_c = None
     self.ntk_c = None
 
@@ -770,7 +771,7 @@ class gradient_descent_mse_ensemble:
     if k_dd.ntk is not None:
         print('ntk condition number: %e -> %e'%(np.linalg.cond(k_dd.ntk), eff_cond(k_dd.ntk, self.y_train)))'''
     return gp_inference(k_dd, self.y_train, self.diag_reg, self.diag_reg_absolute_scale,
-                        self.trace_axes)
+                        self.trace_axes, self.precision)
 
   def get_kernels(self, get: Get, x_test: Optional[np.ndarray],
                   kernel_gf: KernelFn,
