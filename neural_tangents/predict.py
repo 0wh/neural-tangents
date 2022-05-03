@@ -732,6 +732,8 @@ class gradient_descent_mse_ensemble:
         (-1,) + self.trace_shape)
 
     self.k_dd_cache = {}
+    self.nngp_c = None
+    self.ntk_c = None
 
   def get_k_train_train(self, get: Sequence[str]) -> _Kernel:
     for g in get:
@@ -782,15 +784,9 @@ class gradient_descent_mse_ensemble:
     if 'get_condition_number' in kernel_fn_test_test_kwargs:
         get_c = kernel_fn_test_test_kwargs['get_condition_number']
         if 'nngp' in get_c and k_dd.nngp is not None:
-            try:
-                self.nngp_c.append(eff_cond(k_dd.ntk, self.y_train).item())
-            except:
-                self.nngp_c = [eff_cond(k_dd.ntk, self.y_train).item()]
+          self.nngp_c = eff_cond(k_dd.ntk, self.y_train).item()
         if 'ntk' in get_c and k_dd.ntk is not None:
-            try:
-                self.ntk_c.append(eff_cond(k_dd.ntk, self.y_train).item())
-            except:
-                self.ntk_c = [eff_cond(k_dd.ntk, self.y_train).item()]
+          self.ntk_c = eff_cond(k_dd.ntk, self.y_train).item()
     if x_test is None:
       k_td = None
       nngp_tt = compute_cov or None
