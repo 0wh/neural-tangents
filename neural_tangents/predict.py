@@ -680,7 +680,7 @@ def eff_cond(A, b):
     beta = np.dot(v.transpose(), b).reshape(-1)
     b_norm = np.sqrt(np.sum(beta**2))
     x_norm = np.sqrt(np.sum((beta/w)**2))
-    print('w0jax', w[0], '\tx_norm', x_norm, '\tb_norm', b_norm)
+    #print('w0jax', w[0], '\tx_norm', x_norm, '\tb_norm', b_norm)
     #return b_norm/(np.abs(w[0])*x_norm)
     
     A = original_numpy.array(A, dtype=original_numpy.float64)
@@ -689,7 +689,7 @@ def eff_cond(A, b):
     beta = original_numpy.dot(v.transpose(), b).reshape(-1)
     b_norm = original_numpy.sqrt(original_numpy.sum(beta**2))
     x_norm = original_numpy.sqrt(original_numpy.sum((beta/w)**2))
-    print('w0ori', w[0], '\tx_norm', x_norm, '\tb_norm', b_norm)
+    #print('w0ori', w[0], '\tx_norm', x_norm, '\tb_norm', b_norm)
     return b_norm/(original_numpy.abs(w[0])*x_norm)
     #return b_norm/original_numpy.sqrt(original_numpy.sum( ((w[0]/w)*beta)**2 ))
 
@@ -697,8 +697,8 @@ class gradient_descent_mse_ensemble:
   r"""Rewrite the gradient_descent_mse_ensemble method as a class."""
   def __init__(self,
       kernel_ff: KernelFn,
-      x_train: np.ndarray,
-      y_train: np.ndarray,
+      x_train = None: np.ndarray,
+      y_train = None: np.ndarray,
       learning_rate: float = 1.,
       diag_reg: float = 0.0,
       diag_reg_absolute_scale: bool = False,
@@ -707,17 +707,22 @@ class gradient_descent_mse_ensemble:
       **kernel_fn_train_train_kwargs):
     self.precision = precision
     self.kernel_ff = kernel_ff
-    self.x_train = x_train
-    self.y_train = y_train
     self.learning_rate = learning_rate
     self.diag_reg = diag_reg
     self.diag_reg_absolute_scale = diag_reg_absolute_scale
     self.kernel_fn_train_train_kwargs = kernel_fn_train_train_kwargs
+    self.trace_axes = trace_axes
+    if x_train is not None and y_train is not None:
+        self.feed(x_train, y_train)
+  def feed(self,
+      x_train: np.ndarray,
+      y_train: np.ndarray):
+    self.x_train = x_train
+    self.y_train = y_train
     self.expm1 = _make_expm1_fn(y_train.size)
     self.inv_expm1 = _make_inv_expm1_fn(y_train.size)
-    trace_axes = utils.canonicalize_axis(trace_axes, y_train)
+    trace_axes = utils.canonicalize_axis(self.trace_axes, y_train)
     trace_axes = tuple(-y_train.ndim + a for a in trace_axes)
-    self.trace_axes = trace_axes
     n_trace_axes = len(trace_axes)
     self.last_t_axes = range(-n_trace_axes, 0)
     self.trace_shape = tuple(y_train.shape[a] for a in trace_axes)
@@ -759,10 +764,10 @@ class gradient_descent_mse_ensemble:
   def predict_inf(self, get: Get):
     _, get = utils.canonicalize_get(get)
     k_dd = self.get_k_train_train(get)
-    #if k_dd.nngp is not None:
-        #print('nngp condition number: %e -> %e'%(np.linalg.cond(k_dd.nngp), eff_cond(k_dd.ntk, self.y_train)))
+    '''if k_dd.nngp is not None:
+        print('nngp condition number: %e -> %e'%(np.linalg.cond(k_dd.nngp), eff_cond(k_dd.ntk, self.y_train)))
     if k_dd.ntk is not None:
-        print('ntk condition number: %e -> %e'%(np.linalg.cond(k_dd.ntk), eff_cond(k_dd.ntk, self.y_train)))
+        print('ntk condition number: %e -> %e'%(np.linalg.cond(k_dd.ntk), eff_cond(k_dd.ntk, self.y_train)))'''
     return gp_inference(k_dd, self.y_train, self.diag_reg, self.diag_reg_absolute_scale,
                         self.trace_axes)
 
@@ -773,6 +778,18 @@ class gradient_descent_mse_ensemble:
                   **kernel_fn_test_test_kwargs):
     get = _get_dependency(get, compute_cov)
     k_dd = self.get_k_train_train(get)
+    if 'get_condition_number' in kernel_fn_test_test_kwargs:
+        get_c = kernel_fn_test_test_kwargs['get_condition_number']
+        if 'nngp' in get_c and k_dd.nngp is not None:
+            try:
+                self.nngp_c.append(eff_cond(k_dd.ntk, self.y_train).item())
+            except:
+                self.nngp_c = [eff_cond(k_dd.ntk, self.y_train).item()]
+        if 'ntk' in get_c and k_dd.ntk is not None:
+            try:
+                self.ntk_c.append(eff_cond(k_dd.ntk, self.y_train).item())
+            except:
+                self.ntk_c = [eff_cond(k_dd.ntk, self.y_train).item()]
     if x_test is None:
       k_td = None
       nngp_tt = compute_cov or None
