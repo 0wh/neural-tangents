@@ -5044,4 +5044,65 @@ def Tailor(l00, l01, l10=None, l11=None, ktd=False):
                         is_input=False)
     return init_fn, apply_fn, kernel_fn
 
+@layer
+def vTailor(l00, l10):
+    """Layer construction function for a cut & concatenate layer."""
+    init_fn, apply_fn, k00 = l00
+    _, _, k10 = l10
+    def kernel_fn(k, **kwargs):
+        ntk = k.ntk
+        if not ('site' in kwargs):
+            raise ValueError('site is necessary for tailor layers.')
+        x1 = kwargs['addr_x1']
+        x2 = x1 if kwargs['addr_x2'] is None else kwargs['addr_x2']
+        print(x1.shape, x2.shape)
+        site = kwargs['site'][0]
+        x10 = x1[:site]
+        x11 = x1[site:]
+        nngp00 = k00(x10, x2, 'nngp')
+        nngp10 = k10(x11, x2, 'nngp')
+        nngp = np.concatenate((nngp00, nngp10), axis=0)
+        if ntk is not None:
+            ntk00 = k00(x10, x2, 'ntk')
+            ntk10 = k10(x11, x2, 'ntk')
+            ntk = np.concatenate((ntk00, ntk10), axis=0)
+        return k.replace(nngp=nngp,
+                        ntk=ntk,
+                        is_gaussian=True,
+                        is_input=False)
+    return init_fn, apply_fn, kernel_fn
+
+@layer
+def Deriv1d(serial, o1, o2):
+    """Layer constructor function for an arbitrary-order-mix-derivative layer."""
+    init_fn, apply_fn, _kernel_fn = serial
+    def kernel_fn(k, **kwargs):
+        """Compute the transformed kernels after a `Deriv` layer."""
+        # `x1` and `x2` are used to calculate the output kernel instead of `k`
+        if not ('addr_x1' in kwargs and 'addr_x2' in kwargs):
+            raise ValueError('addr_x1 and addr_x2 are necessary to calculate Gradients.')
+        x1 = kwargs['addr_x1']
+        x2 = x1 if kwargs['addr_x2'] is None else kwargs['addr_x2']
+        x1, x2 = x1.reshape(-1,1,1), x2.reshape(-1,1,1)
+        def deriv(x1, x2, o1, o2, get):
+            if o1==0:
+                if o2==0:
+                    return _kernel_fn(x1, x2, get).squeeze()
+                return grad(deriv, argnums=1)(x1, x2, o1, o2-1, get).squeeze()
+            return grad(deriv, argnums=0)(x1, x2, o1-1, o2, get).squeeze()
+        nngp = vmap(vmap(deriv, in_axes=(None, 0, None, None, None)), in_axes=(0, None, None, None, None))(x1, x2, o1, o2, 'nngp')
+        ntk = k.ntk
+        if ntk is not None:
+            ntk = vmap(vmap(deriv, in_axes=(None, 0, None, None, None)), in_axes=(0, None, None, None, None))(x1, x2, o1, o2, 'ntk')
+        return k.replace(nngp=nngp,
+                        ntk=ntk,
+                        is_gaussian=True,
+                        is_input=False)
+    return init_fn, apply_fn, kernel_fn
+
+def Grad(serial):
+    return Deriv1d(serial, 1, 1)
+
+def K_gf(serial):
+    return Deriv1d(serial, 1, 0)
 # issDev //
