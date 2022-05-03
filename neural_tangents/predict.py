@@ -504,8 +504,7 @@ def gp_inference(
     y_train: np.ndarray,
     diag_reg: float = 0.,
     diag_reg_absolute_scale: bool = False,
-    trace_axes: Axes = (-1,),
-    precision = None):
+    trace_axes: Axes = (-1,)):
   r"""Compute the mean and variance of the 'posterior' of NNGP/NTK/NTKGP.
 
   NNGP - the exact posterior of an infinitely wide Bayesian NN. NTK - exact
@@ -552,7 +551,6 @@ def gp_inference(
     computing 'posterior' Gaussian distribution (mean or mean and covariance)
     on a given test set.
   """
-  self.precision = precision
   even, odd, first, last = _get_axes(_get_first(k_train_train))
   trace_axes = utils.canonicalize_axis(trace_axes, y_train)
 
@@ -771,7 +769,7 @@ class gradient_descent_mse_ensemble:
     if k_dd.ntk is not None:
         print('ntk condition number: %e -> %e'%(np.linalg.cond(k_dd.ntk), eff_cond(k_dd.ntk, self.y_train)))'''
     return gp_inference(k_dd, self.y_train, self.diag_reg, self.diag_reg_absolute_scale,
-                        self.trace_axes, self.precision)
+                        self.trace_axes)
 
   def get_kernels(self, get: Get, x_test: Optional[np.ndarray],
                   kernel_gf: KernelFn,
