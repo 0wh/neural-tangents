@@ -682,6 +682,7 @@ def min_cond(A, b):
     beta = original_numpy.dot(v.transpose(), b).reshape(-1)
     b_norm = original_numpy.sqrt(original_numpy.sum(beta**2))
     x_norm = original_numpy.sqrt(original_numpy.sum((beta/w)**2))
+    print(list(original_numpy.abs(1/w)))#
     return b_norm/x_norm*original_numpy.mean(original_numpy.abs(1/w))
 
 def eff_cond(A, b):
