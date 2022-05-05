@@ -674,7 +674,7 @@ _Kernel = collections.namedtuple('Kernel', 'nngp ntk')
 _Kernel.__new__.__defaults__ = (None,) * len(_Kernel._fields)
 
 #issDev >>
-def min_cond(A, b):
+def conds(A, b):
     """Minimized condition number"""
     A = original_numpy.array(A, dtype=original_numpy.float64)
     b = original_numpy.array(b, dtype=original_numpy.float64)
@@ -683,7 +683,7 @@ def min_cond(A, b):
     b_norm = original_numpy.sqrt(original_numpy.sum(beta**2))
     x_norm = original_numpy.sqrt(original_numpy.sum((beta/w)**2))
     eff_sigma = original_numpy.sqrt(original_numpy.square(1/w).mean())
-    return b_norm/x_norm*eff_sigma
+    return (b_norm/x_norm*eff_sigma).item(), (b_norm/x_norm/original_numpy.abs(w[0])).item() # min_cond, eff_cond
 
 def eff_cond(A, b):
     """Effective condition number"""
@@ -792,9 +792,9 @@ class gradient_descent_mse_ensemble:
     if 'get_condition_number' in kernel_fn_test_test_kwargs:
         get_c = kernel_fn_test_test_kwargs['get_condition_number']
         if 'nngp' in get_c and k_dd.nngp is not None:
-          self.nngp_c = min_cond(k_dd.nngp, self.y_train).item()#, eff_cond(k_dd.nngp, self.y_train).item()
+          self.nngp_c = conds(k_dd.nngp, self.y_train)#, eff_cond(k_dd.nngp, self.y_train).item()
         if 'ntk' in get_c and k_dd.ntk is not None:
-          self.ntk_c = min_cond(k_dd.ntk, self.y_train).item()#, eff_cond(k_dd.ntk, self.y_train).item()
+          self.ntk_c = conds(k_dd.ntk, self.y_train)#, eff_cond(k_dd.ntk, self.y_train).item()
     if x_test is None:
       k_td = None
       nngp_tt = compute_cov or None
