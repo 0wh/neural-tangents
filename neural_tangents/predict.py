@@ -683,7 +683,7 @@ def conds(A, b):
     b_norm = original_numpy.sqrt(original_numpy.sum(beta**2))
     x_norm = original_numpy.sqrt(original_numpy.sum((beta/w)**2))
     eff_sigma = original_numpy.sqrt(original_numpy.square(1/w).mean())
-    print(list(w))
+    #print(list(w))
     return (b_norm/x_norm*eff_sigma).item(), (b_norm/x_norm/original_numpy.abs(w[0])).item() # amo_cond, eff_cond
 
 def eff_cond(A, b):
