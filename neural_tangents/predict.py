@@ -899,20 +899,19 @@ class gradient_descent_mse_ensemble:
 
       # Test set.
       else:
+        neg_inv_expm1 = -self.inv_expm1(evals, t)
+        ktd_g = utils.make_2d(getattr(k_td, g))
         if iter_error:
-            inv_exp = self.inv_exp(evals, t)
-            ktd_g = utils.make_2d(getattr(k_td, g))
-            mean = np.einsum(
-                'lj,ji,ti,ki,k...->tl...',
-                ktd_g, evecs, inv_exp, evecs, self.y_train_flat,
-                optimize=True)           
+          inv_exp = self.inv_exp(evals, t)
+          mean = np.einsum(
+              'lj,ji,ti,ki,k...->tl...',
+              ktd_g, evecs, inv_exp, evecs, self.y_train_flat,
+              optimize=True)
         else:
-            neg_inv_expm1 = -self.inv_expm1(evals, t)
-            ktd_g = utils.make_2d(getattr(k_td, g))
-            mean = np.einsum(
-                'lj,ji,ti,ki,k...->tl...',
-                ktd_g, evecs, neg_inv_expm1, evecs, self.y_train_flat,
-                optimize=True)
+          mean = np.einsum(
+              'lj,ji,ti,ki,k...->tl...',
+              ktd_g, evecs, neg_inv_expm1, evecs, self.y_train_flat,
+              optimize=True)
 
       mean = reshape_mean(mean)
 
