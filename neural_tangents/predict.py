@@ -734,6 +734,9 @@ class gradient_descent_mse_ensemble:
     self.y_train = y_train.astype(self.precision)
     self.expm1 = _make_expm1_fn(y_train.size)
     self.inv_expm1 = _make_inv_expm1_fn(y_train.size)
+    def inv_exp_fn(evals: np.ndarray, t: np.ndarray):
+      return np.exp(-np.abs(evals) * t / y_train.size) / np.abs(evals)
+    self.inv_exp = inv_exp_fn
     trace_axes = utils.canonicalize_axis(self.trace_axes, y_train)
     trace_axes = tuple(-y_train.ndim + a for a in trace_axes)
     n_trace_axes = len(trace_axes)
@@ -851,6 +854,7 @@ class gradient_descent_mse_ensemble:
                  get: Get = None,
                  t: ArrayOrScalar = None,
                  compute_cov: bool = False,
+                 iter_error: bool = False,
                  **kernel_fn_test_test_kwargs) -> Dict[str, Gaussian]:
     if get is None:
       get = ('nngp', 'ntk')
@@ -895,12 +899,20 @@ class gradient_descent_mse_ensemble:
 
       # Test set.
       else:
-        neg_inv_expm1 = -self.inv_expm1(evals, t)
-        ktd_g = utils.make_2d(getattr(k_td, g))
-        mean = np.einsum(
-            'lj,ji,ti,ki,k...->tl...',
-            ktd_g, evecs, neg_inv_expm1, evecs, self.y_train_flat,
-            optimize=True)
+        if iter_error:
+            inv_exp = self.inv_exp(evals, t)
+            ktd_g = utils.make_2d(getattr(k_td, g))
+            mean = np.einsum(
+                'lj,ji,ti,ki,k...->tl...',
+                ktd_g, evecs, inv_exp, evecs, self.y_train_flat,
+                optimize=True)           
+        else:
+            neg_inv_expm1 = -self.inv_expm1(evals, t)
+            ktd_g = utils.make_2d(getattr(k_td, g))
+            mean = np.einsum(
+                'lj,ji,ti,ki,k...->tl...',
+                ktd_g, evecs, neg_inv_expm1, evecs, self.y_train_flat,
+                optimize=True)
 
       mean = reshape_mean(mean)
 
